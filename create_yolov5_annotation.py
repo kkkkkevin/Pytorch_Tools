@@ -23,13 +23,15 @@ def convert_xyxy_to_cxcywh(boxes, w, h):
 def conver_df_to_yolov5_format(df, classes, w, h):
     txt = ''
     for key, boxes in df['labels'].items():
-        _boxes = convert_xyxy_to_cxcywh(boxes, w, h)
 
-        for box in _boxes:
-            txt += str(classes[key])
-            txt += ' ' + str(box[0]) + ' ' + str(box[1]) + \
-                ' ' + str(box[2]) + ' ' + str(box[3])
-            txt += '\n'
+        if key == 'Breezer School' or key == 'Jumper School':
+            _boxes = convert_xyxy_to_cxcywh(boxes, w, h)
+
+            for box in _boxes:
+                txt += str(classes[key])
+                txt += ' ' + str(box[0]) + ' ' + str(box[1]) + \
+                    ' ' + str(box[2]) + ' ' + str(box[3])
+                txt += '\n'
     return txt
 
 
@@ -57,10 +59,10 @@ def main(img_dir, ann_dir, save_path, classes):
 if __name__ == '__main__':
     root = '/workspaces/data/ObjectDetection/school_of_fish/'
 
-    img_dir = root + 'train_images'
-    ann_dir = root + 'train_annotations'
+    img_dir = root + 'images/train_images'
+    ann_dir = root + 'labels/train_annotations'
 
-    save_dir = root + 'train_annotations_yolov5'
+    save_dir = root + 'labels/train_annotations_yolov5'
     classes = {
         'Breezer School': 0,
         'Jumper School': 1,
