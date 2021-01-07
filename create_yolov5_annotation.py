@@ -8,11 +8,12 @@ from tqdm import tqdm
 
 
 def convert_xyxy_to_cxcywh(boxes, w, h):
-    _boxes = np.array(boxes, dtype=np.float)
-    _boxes[:, 2] = _boxes[:, 2] - _boxes[:, 0]
-    _boxes[:, 3] = _boxes[:, 3] - _boxes[:, 1]
-    _boxes[:, 0] = _boxes[:, 0] + _boxes[:, 2] * 0.5
-    _boxes[:, 1] = _boxes[:, 1] + _boxes[:, 3] * 0.5
+    x = np.array(boxes, dtype=np.float32)
+    _boxes = x.copy()
+    _boxes[:, 0] = (x[:, 0] + x[:, 2]) * 0.5
+    _boxes[:, 1] = (x[:, 1] + x[:, 3]) * 0.5
+    _boxes[:, 2] = x[:, 2] - x[:, 0]
+    _boxes[:, 3] = x[:, 3] - x[:, 1]
 
     _boxes /= [w, h, w, h]
     _boxes = np.round(_boxes, 6)
