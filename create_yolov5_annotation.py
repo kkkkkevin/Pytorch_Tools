@@ -21,13 +21,17 @@ def convert_xyxy_to_cxcywh(boxes, w, h):
     return _boxes
 
 
-def conver_df_to_yolov5_format(df, classes, w, h):
+def conver_df_to_yolov5_format(df, classes, w, h,
+                               target_keys, trans_box):
     txt = ''
     for key, boxes in df['labels'].items():
 
-        if key == 'Breezer School' or key == 'Jumper School':
-            _boxes = convert_xyxy_to_cxcywh(boxes, w, h)
-
+        if key in target_keys:
+            if trans_box == 'xyxy2yolo':
+                _boxes = convert_xyxy_to_cxcywh(boxes, w, h)
+            else:
+                _boxes = boxes
+            # _boxes = boxes
             for box in _boxes:
                 txt += str(classes[key])
                 txt += ' ' + str(box[0]) + ' ' + str(box[1]) + \
@@ -36,7 +40,8 @@ def conver_df_to_yolov5_format(df, classes, w, h):
     return txt
 
 
-def main(img_dir, ann_dir, save_path, classes):
+def main(img_dir, ann_dir, save_path, classes,
+         target_keys, trans_box):
     os.makedirs(save_path, exist_ok=True)
 
     imgs = list(sorted(os.listdir(img_dir)))
@@ -63,7 +68,7 @@ if __name__ == '__main__':
     img_dir = root + 'images/train_images'
     ann_dir = root + 'labels/train_annotations'
 
-    save_dir = root + 'labels/train_annotations_yolov5'
+    save_dir = root + 'labels/train_annotations_yolo'
     classes = {
         'Breezer School': 0,
         'Jumper School': 1,
@@ -77,4 +82,8 @@ if __name__ == '__main__':
         'Each Fish': 9,
         'w': 10,
     }
-    main(img_dir, ann_dir, save_dir, classes)
+    # target class
+    target_keys = ['Breezer School', 'Jumper School']
+    # xyxy to coco, yolo
+    trans_box = ''  # keys 'xyxy2coco', 'xyxy2yolo'
+    main(img_dir, ann_dir, save_dir, classes, target_keys, trans_box)
