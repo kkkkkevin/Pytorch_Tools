@@ -11,7 +11,7 @@ from math import trunc
 from PIL import Image as PILImage
 from PIL import ImageDraw as PILImageDraw
 import base64
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 
 mask_id_rgb = [

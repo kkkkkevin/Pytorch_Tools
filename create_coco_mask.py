@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import cv2
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 mask_id_rgb_categy_all = [
     # [R, G, B]

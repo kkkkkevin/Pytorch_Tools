@@ -1,10 +1,10 @@
 import os
 import json
 import numpy as np
-
+import pandas as pd
 import cv2
 
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 
 def convert_xyxy_to_cxcywh(boxes, w, h):
@@ -21,8 +21,9 @@ def convert_xyxy_to_cxcywh(boxes, w, h):
     return _boxes
 
 
-def conver_df_to_yolov5_format(df, classes, w, h,
-                               target_keys, trans_box):
+def conver_json2txt(df, classes, w, h,
+                    target_keys, trans_box,
+                    seq=' '):
     txt = ''
     for key, boxes in df['labels'].items():
 
@@ -34,14 +35,60 @@ def conver_df_to_yolov5_format(df, classes, w, h,
             # _boxes = boxes
             for box in _boxes:
                 txt += str(classes[key])
-                txt += ' ' + str(box[0]) + ' ' + str(box[1]) + \
-                    ' ' + str(box[2]) + ' ' + str(box[3])
+                txt += seq + str(box[0]) + seq + str(box[1]) + \
+                    seq + str(box[2]) + seq + str(box[3])
                 txt += '\n'
     return txt
 
 
-def main(img_dir, ann_dir, save_path, classes,
-         target_keys, trans_box):
+def conver_json2csv(js, img_id, ann_id,
+                    classes, w, h,
+                    target_keys, trans_box):
+    df_list = []
+    for key, boxes in js['labels'].items():
+        if key in target_keys:
+            if trans_box == 'xyxy2yolo':
+                _boxes = convert_xyxy_to_cxcywh(boxes, w, h)
+            else:
+                _boxes = boxes
+
+            for box in _boxes:
+                df_list.append([img_id, classes[key], w, h, box, ann_id])
+
+    return df_list
+
+
+def create_csv(img_dir, ann_dir, save_path, classes,
+               target_keys, trans_box):
+
+    df_list = []
+    os.makedirs(save_path, exist_ok=True)
+
+    imgs = list(sorted(os.listdir(img_dir)))
+    anns = list(sorted(os.listdir(ann_dir)))
+
+    for idx in tqdm(range(len(imgs)), 'anno'):
+        img_path = os.path.join(img_dir, imgs[idx])
+        ann_path = os.path.join(ann_dir, anns[idx])
+
+        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        h, w, _ = img.shape  # (h,w,c)
+
+        with open(ann_path) as js:
+            js = json.load(js)
+            tmp = conver_json2csv(js, imgs[idx], anns[idx],
+                                  classes, w, h, target_keys, trans_box)
+            df_list.extend(tmp)
+
+    col = ['image_id', 'label_id', 'width', 'height', 'bbox', 'ann_id']
+    df = pd.DataFrame(df_list, columns=col)
+
+    file_name = 'train'
+    df.to_csv(f'{save_path}/{file_name}.csv')
+
+
+def create_text(img_dir, ann_dir, save_path, classes,
+                target_keys, trans_box):
     os.makedirs(save_path, exist_ok=True)
 
     imgs = list(sorted(os.listdir(img_dir)))
@@ -56,7 +103,7 @@ def main(img_dir, ann_dir, save_path, classes,
 
         with open(ann_path) as js:
             df = json.load(js)
-            txt = conver_df_to_yolov5_format(df, classes, w, h)
+            txt = conver_json2txt(df, classes, w, h, target_keys, trans_box)
             file_name = os.path.splitext(os.path.basename(anns[idx]))[0]
             with open(save_path + '/' + file_name + '.txt', mode='w') as tx:
                 tx.write(txt)
@@ -68,7 +115,7 @@ if __name__ == '__main__':
     img_dir = root + 'images/train_images'
     ann_dir = root + 'labels/train_annotations'
 
-    save_dir = root + 'labels/train_annotations_yolo'
+    save_dir = root + 'labels'
     classes = {
         'Breezer School': 0,
         'Jumper School': 1,
@@ -86,4 +133,4 @@ if __name__ == '__main__':
     target_keys = ['Breezer School', 'Jumper School']
     # xyxy to coco, yolo
     trans_box = ''  # keys 'xyxy2coco', 'xyxy2yolo'
-    main(img_dir, ann_dir, save_dir, classes, target_keys, trans_box)
+    create_csv(img_dir, ann_dir, save_dir, classes, target_keys, trans_box)
